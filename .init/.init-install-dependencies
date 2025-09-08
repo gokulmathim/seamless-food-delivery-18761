@@ -1,0 +1,4 @@
+{
+    "command": "flutter pub get",
+    "working_directory": "/home/kavia/workspace/code-generation/seamless-food-delivery-18761/food_delivery_frontend"
+}
