@@ -1,0 +1,1 @@
+ /home/kavia/workspace/code-generation/seamless-food-delivery-18761/food_delivery_frontend/.dart_tool/flutter_build/aa9de3802c943b69d0f0772f830258e5/native_assets.json: 

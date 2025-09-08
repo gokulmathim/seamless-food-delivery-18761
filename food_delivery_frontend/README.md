@@ -1,16 +1,55 @@
 # food_delivery_frontend
 
-A new Flutter project.
+Cross-platform Flutter app for a food delivery experience:
+- Browse restaurants
+- View menus
+- Add to cart and checkout
+- Track order status
+- Manage account and payments (placeholder)
 
-## Getting Started
+This app uses a clean Provider-based state management and a mock ApiService for data. Replace ApiService with real HTTP calls later.
 
-This project is a starting point for a Flutter application.
+## Run
 
-A few resources to get you started if this is your first Flutter project:
+- Flutter 3.29+ and Dart 3.7+ recommended
+- From this directory:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Structure
+
+- lib/
+  - main.dart: Entry, providers, theme, routing
+  - src/
+    - app_theme.dart: Theming
+    - navigation/app_router.dart: Routes
+    - models/: Plain models
+    - providers/: Business/state logic (Auth, Restaurants, Menu, Cart, Order)
+    - services/: ApiService (mock), StorageService
+    - screens/
+      - onboarding/
+      - auth/
+      - home/
+      - restaurant/
+      - cart/
+      - order/
+      - profile/
+
+## API Integration
+
+Edit `src/services/api_service.dart` to connect to your backend. Current methods:
+- getRestaurants
+- getMenuForRestaurant
+- login / register
+- placeOrder
+- getOrderStatus
+
+Use environment variables via `.env` (already whitelisted in pubspec assets).
+
+## Notes
+
+- Payments are placeholders on the UI; integrate actual provider (e.g., Stripe) on backend and expose to mobile via APIs/SDKs.
+- Order tracking uses a timer to poll the mock service.

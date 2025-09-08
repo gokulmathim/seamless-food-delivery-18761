@@ -3,16 +3,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:food_delivery_frontend/main.dart';
 
 void main() {
-  testWidgets('App generation message displayed', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+  testWidgets('App boots and shows Onboarding', (WidgetTester tester) async {
+    await tester.pumpWidget(const FoodDeliveryApp());
+    await tester.pumpAndSettle();
 
-    expect(find.text('food_delivery_frontend App is being generated...'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Seamless Food'), findsWidgets);
+    expect(find.text('Get Started'), findsOneWidget);
   });
 
-  testWidgets('App bar has correct title', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Navigate to Login', (WidgetTester tester) async {
+    await tester.pumpWidget(const FoodDeliveryApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Get Started'));
+    await tester.pumpAndSettle();
 
-    expect(find.text('food_delivery_frontend'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
   });
 }
