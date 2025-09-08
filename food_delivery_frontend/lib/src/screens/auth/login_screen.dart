@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../home/home_shell.dart';
 import 'register_screen.dart';
+import '../../widgets/ui_helpers.dart';
 
 class LoginScreen extends StatefulWidget {
   static const routeName = '/login';
@@ -70,16 +71,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 chars',
                 ),
                 const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: loading ? null : _submit,
-                  child: Text(loading ? 'Signing in...' : 'Sign In'),
+                AnimatedTap(
+                  onTap: loading ? null : _submit,
+                  child: FilledButton(
+                    onPressed: loading ? null : _submit,
+                    child: Text(loading ? 'Signing in...' : 'Sign In'),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(RegisterScreen.routeName);
-                  },
-                  child: const Text('Create an account'),
+                AnimatedTap(
+                  onTap: () => Navigator.of(context).pushNamed(RegisterScreen.routeName),
+                  child: const TextButton(
+                    onPressed: null, // Gesture handled by AnimatedTap
+                    child: Text('Create an account'),
+                  ),
                 ),
               ],
             ),

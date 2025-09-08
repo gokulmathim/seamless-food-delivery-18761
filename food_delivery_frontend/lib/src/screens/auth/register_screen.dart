@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../home/home_shell.dart';
+import '../../widgets/ui_helpers.dart';
 
 class RegisterScreen extends StatefulWidget {
   static const routeName = '/register';
@@ -77,9 +78,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (v) => v != null && v.length >= 6 ? null : 'Min 6 chars',
                 ),
                 const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: loading ? null : _submit,
-                  child: Text(loading ? 'Creating...' : 'Create account'),
+                AnimatedTap(
+                  onTap: loading ? null : _submit,
+                  child: FilledButton(
+                    onPressed: loading ? null : _submit,
+                    child: Text(loading ? 'Creating...' : 'Create account'),
+                  ),
                 ),
               ],
             ),

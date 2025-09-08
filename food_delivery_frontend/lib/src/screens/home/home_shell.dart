@@ -24,9 +24,16 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: _tabs[_index],
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        child: KeyedSubtree(key: ValueKey(_index), child: _tabs[_index]),
+      ),
       bottomNavigationBar: NavigationBar(
+        indicatorColor: scheme.primary.withAlpha(40),
         selectedIndex: _index,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.restaurant_menu), label: 'Home'),

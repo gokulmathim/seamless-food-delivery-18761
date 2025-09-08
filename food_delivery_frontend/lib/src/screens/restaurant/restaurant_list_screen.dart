@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/restaurant.dart';
 import '../../providers/restaurant_provider.dart';
 import '../restaurant/restaurant_detail_screen.dart';
+import '../../widgets/ui_helpers.dart';
 
 class RestaurantListScreen extends StatelessWidget {
   const RestaurantListScreen({super.key});
@@ -12,8 +13,11 @@ class RestaurantListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<RestaurantProvider>();
     final restaurants = provider.restaurants;
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Discover')),
+      appBar: AppBar(
+        title: const Text('Discover'),
+      ),
       body: RefreshIndicator(
         onRefresh: () => provider.fetchRestaurants(),
         child: provider.isLoading && restaurants.isEmpty
@@ -24,6 +28,11 @@ class RestaurantListScreen extends StatelessWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemCount: restaurants.length,
               ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => provider.fetchRestaurants(),
+        backgroundColor: scheme.tertiary,
+        child: const Icon(Icons.refresh),
       ),
     );
   }
@@ -36,20 +45,16 @@ class _RestaurantCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return InkWell(
+    return AnimatedTap(
       onTap: () => Navigator.of(context).pushNamed(
         RestaurantDetailScreen.routeName,
         arguments: {'restaurantId': restaurant.id},
       ),
-      child: Card(
-        clipBehavior: Clip.hardEdge,
+      child: GlassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(restaurant.imageUrl, fit: BoxFit.cover),
-            ),
+            FoodImage(url: restaurant.imageUrl, aspectRatio: 16 / 9, borderRadius: 12),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
@@ -57,7 +62,10 @@ class _RestaurantCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(restaurant.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(
+                        restaurant.name,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         restaurant.categories.take(3).join(' • '),
@@ -74,6 +82,8 @@ class _RestaurantCard extends StatelessWidget {
                   Chip(
                     label: Text(restaurant.rating.toStringAsFixed(1)),
                     avatar: const Icon(Icons.star, size: 16, color: Colors.amber),
+                    backgroundColor: scheme.secondary.withAlpha(40),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ],
               ),

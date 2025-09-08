@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/cart_provider.dart';
 import '../order/checkout_screen.dart';
+import '../../widgets/ui_helpers.dart';
 
 class CartScreen extends StatelessWidget {
   static const routeName = '/cart';
@@ -12,6 +13,7 @@ class CartScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final items = cart.items;
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Your Cart')),
       body: items.isEmpty
@@ -23,25 +25,31 @@ class CartScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     itemBuilder: (_, i) {
                       final c = items[i];
-                      return Card(
+                      return GlassCard(
                         child: ListTile(
-                          leading: CircleAvatar(child: Text(c.quantity.toString())),
+                          leading: CircleAvatar(
+                            backgroundColor: scheme.secondary.withAlpha(40),
+                            foregroundColor: scheme.secondary,
+                            child: Text(c.quantity.toString()),
+                          ),
                           title: Text(c.item.name),
                           subtitle: Text('\$${c.item.price.toStringAsFixed(2)} each'),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(
-                                onPressed: () => cart.changeQty(c.item.id, c.quantity - 1),
-                                icon: const Icon(Icons.remove),
+                              AnimatedTap(
+                                onTap: () => cart.changeQty(c.item.id, c.quantity - 1),
+                                child: const Icon(Icons.remove_circle_outline),
                               ),
-                              IconButton(
-                                onPressed: () => cart.changeQty(c.item.id, c.quantity + 1),
-                                icon: const Icon(Icons.add),
+                              const SizedBox(width: 6),
+                              AnimatedTap(
+                                onTap: () => cart.changeQty(c.item.id, c.quantity + 1),
+                                child: Icon(Icons.add_circle, color: scheme.primary),
                               ),
-                              IconButton(
-                                onPressed: () => cart.removeFromCart(c.item.id),
-                                icon: const Icon(Icons.delete_outline),
+                              const SizedBox(width: 6),
+                              AnimatedTap(
+                                onTap: () => cart.removeFromCart(c.item.id),
+                                child: const Icon(Icons.delete_outline),
                               ),
                             ],
                           ),
@@ -52,13 +60,19 @@ class CartScreen extends StatelessWidget {
                     itemCount: items.length,
                   ),
                 ),
-                _Totals(subtotal: cart.subtotal, delivery: cart.deliveryFee, tax: cart.tax, total: cart.total),
+                GlassCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: _Totals(subtotal: cart.subtotal, delivery: cart.deliveryFee, tax: cart.tax, total: cart.total),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: FilledButton.icon(
-                    onPressed: () => Navigator.of(context).pushNamed(CheckoutScreen.routeName),
-                    icon: const Icon(Icons.lock),
-                    label: const Text('Proceed to Checkout'),
+                  child: AnimatedTap(
+                    onTap: () => Navigator.of(context).pushNamed(CheckoutScreen.routeName),
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.of(context).pushNamed(CheckoutScreen.routeName),
+                      icon: const Icon(Icons.lock),
+                      label: const Text('Proceed to Checkout'),
+                    ),
                   ),
                 ),
               ],
@@ -82,20 +96,23 @@ class _Totals extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Text _row(String label, double val, {bool bold = false}) => Text(
+    final scheme = Theme.of(context).colorScheme;
+
+    Text rowText(String label, double val, {bool bold = false}) => Text(
           '$label: \$${val.toStringAsFixed(2)}',
-          style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal, fontSize: bold ? 16 : 14),
+          style: TextStyle(
+            fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+            fontSize: bold ? 16 : 14,
+            color: bold ? scheme.primary : null,
+          ),
         );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        _row('Subtotal', subtotal),
-        _row('Delivery', delivery),
-        _row('Tax', tax),
-        const Divider(),
-        _row('Total', total, bold: true),
-      ]),
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      rowText('Subtotal', subtotal),
+      rowText('Delivery', delivery),
+      rowText('Tax', tax),
+      const Divider(),
+      rowText('Total', total, bold: true),
+    ]);
   }
 }

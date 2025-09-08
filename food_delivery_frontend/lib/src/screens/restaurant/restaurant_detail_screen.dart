@@ -6,6 +6,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/menu_provider.dart';
 import '../../providers/restaurant_provider.dart';
 import '../cart/cart_screen.dart';
+import '../../widgets/ui_helpers.dart';
 
 class RestaurantDetailScreen extends StatefulWidget {
   static const routeName = '/restaurant';
@@ -20,7 +21,11 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => context.read<MenuProvider>().fetchMenu(widget.restaurantId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<MenuProvider>().fetchMenu(widget.restaurantId);
+      }
+    });
   }
 
   @override
@@ -32,6 +37,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
     final menuProvider = context.watch<MenuProvider>();
     final menu = menuProvider.menuFor(widget.restaurantId);
     final isLoading = menuProvider.isLoading && menu.isEmpty;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: Text(restaurant.name)),
@@ -39,6 +45,7 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
         onPressed: () => Navigator.of(context).pushNamed(CartScreen.routeName),
         icon: const Icon(Icons.shopping_cart),
         label: const Text('Cart'),
+        backgroundColor: scheme.secondary,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -59,24 +66,22 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
+    return GlassCard(
       child: ListTile(
-        leading: AspectRatio(
-          aspectRatio: 1,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(item.imageUrl, fit: BoxFit.cover),
-          ),
+        contentPadding: const EdgeInsets.only(right: 8, left: 8),
+        leading: SizedBox(
+          width: 64,
+          child: FoodImage(url: item.imageUrl, aspectRatio: 1, borderRadius: 10),
         ),
-        title: Text(item.name),
+        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(item.description, maxLines: 2, overflow: TextOverflow.ellipsis),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('\$${item.price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
-            IconButton(
-              onPressed: () {
+            AnimatedTap(
+              onTap: () {
                 context.read<CartProvider>().addToCart(item);
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   content: Text('${item.name} added to cart'),
@@ -85,8 +90,7 @@ class _MenuTile extends StatelessWidget {
                   duration: const Duration(seconds: 1),
                 ));
               },
-              icon: const Icon(Icons.add_circle),
-              color: scheme.primary,
+              child: Icon(Icons.add_circle, color: scheme.primary, size: 28),
             ),
           ],
         ),

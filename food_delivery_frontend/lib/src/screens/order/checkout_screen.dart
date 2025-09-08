@@ -6,6 +6,7 @@ import '../../providers/order_provider.dart';
 import '../../services/api_service.dart';
 import '../home/home_shell.dart';
 import 'order_tracking_screen.dart';
+import '../../widgets/ui_helpers.dart';
 
 class CheckoutScreen extends StatefulWidget {
   static const routeName = '/checkout';
@@ -17,50 +18,88 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _placing = false;
-  String _paymentMethod = 'Visa **** 4242'; // Placeholder
+  final String _paymentMethod = 'Visa **** 4242'; // Placeholder
+  bool _navigateToTracking = false;
+  String? _nextOrderId;
 
   Future<void> _placeOrder() async {
+    // Capture needed values before any await to avoid using context across async gaps
     final cart = context.read<CartProvider>();
-    if (cart.items.isEmpty || cart.restaurantId == null) {
+    final hasItems = cart.items.isNotEmpty && cart.restaurantId != null;
+    final restaurantId = cart.restaurantId;
+    final subtotal = cart.subtotal;
+    final deliveryFee = cart.deliveryFee;
+    final tax = cart.tax;
+    final total = cart.total;
+
+    if (!hasItems || restaurantId == null) {
+      // Safe to use context here since we haven't awaited yet
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Add items to cart first')));
       return;
     }
+
     setState(() => _placing = true);
     try {
+      // Capture providers before any await
+      final orderProvider = context.read<OrderProvider>();
+
       final order = await ApiService().placeOrder(
-        restaurantId: cart.restaurantId!,
-        subtotal: cart.subtotal,
-        deliveryFee: cart.deliveryFee,
-        tax: cart.tax,
-        total: cart.total,
+        restaurantId: restaurantId,
+        subtotal: subtotal,
+        deliveryFee: deliveryFee,
+        tax: tax,
+        total: total,
       );
-      await context.read<OrderProvider>().setActiveOrder(order);
+
+      // Update provider using the captured reference (no new context read)
+      await orderProvider.setActiveOrder(order);
+
+      // Clear cart safely; this uses the captured cart reference created before await
       cart.clear();
-      if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        OrderTrackingScreen.routeName,
-        (route) => route.settings.name == HomeShell.routeName,
-        arguments: {'orderId': order.id},
-      );
+
+      // Mark navigation intent via state flags only (no context use across async)
+      _nextOrderId = order.id;
+      _navigateToTracking = true;
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to place order')));
+      // Schedule error message in a post frame to avoid context across async gap
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to place order')));
+      });
     } finally {
-      if (mounted) setState(() => _placing = false);
+      if (mounted) {
+        setState(() => _placing = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final scheme = Theme.of(context).colorScheme;
+
+    // Handle navigation after async via state flags to avoid using context across async gaps
+    if (_navigateToTracking && _nextOrderId != null) {
+      final orderId = _nextOrderId!;
+      _navigateToTracking = false;
+      _nextOrderId = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          OrderTrackingScreen.routeName,
+          (route) => route.settings.name == HomeShell.routeName,
+          arguments: {'orderId': orderId},
+        );
+      });
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Delivery Address', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('Delivery Address', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary)),
           const SizedBox(height: 8),
-          Card(
+          GlassCard(
             child: ListTile(
               title: const Text('123 Main St, City'),
               subtitle: Text('Estimated: ${cart.items.isEmpty ? '-' : '30-40 min'}'),
@@ -68,9 +107,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text('Payment', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('Payment', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary)),
           const SizedBox(height: 8),
-          Card(
+          GlassCard(
             child: ListTile(
               leading: const Icon(Icons.credit_card),
               title: Text(_paymentMethod),
@@ -79,9 +118,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text('Summary', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text('Summary', style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary)),
           const SizedBox(height: 8),
-          Card(
+          GlassCard(
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -94,10 +133,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: _placing ? null : _placeOrder,
-            icon: const Icon(Icons.check),
-            label: Text(_placing ? 'Placing Order...' : 'Place Order'),
+          AnimatedTap(
+            onTap: _placing ? null : _placeOrder,
+            child: FilledButton.icon(
+              onPressed: _placing ? null : _placeOrder,
+              icon: const Icon(Icons.check),
+              label: Text(_placing ? 'Placing Order...' : 'Place Order'),
+            ),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/order.dart';
 import '../../providers/order_provider.dart';
+import '../../widgets/ui_helpers.dart';
 
 class OrderTrackingScreen extends StatelessWidget {
   static const routeName = '/order-tracking';
@@ -30,6 +31,7 @@ class OrderTrackingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<OrderProvider>();
     final order = provider.activeOrder;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Order Tracking')),
@@ -40,7 +42,7 @@ class OrderTrackingScreen extends StatelessWidget {
                 child: Text(
                   'No active orders.\nYour updates will appear here after checkout.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withAlpha(180)),
+                  style: TextStyle(color: scheme.onSurface.withAlpha(180)),
                 ),
               ),
             )
@@ -49,7 +51,7 @@ class OrderTrackingScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Card(
+                  GlassCard(
                     child: ListTile(
                       leading: const Icon(Icons.receipt_long),
                       title: Text('Order ${order.id}'),
@@ -58,11 +60,24 @@ class OrderTrackingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _StatusStepper(status: order.status, labelBuilder: _statusLabel),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    // micro-animation accent
+                    value: order.status == OrderStatus.delivered
+                        ? 1
+                        : (order.status.index + 1) / OrderStatus.values.where((e) => e != OrderStatus.cancelled).length,
+                    color: scheme.tertiary,
+                    backgroundColor: scheme.tertiary.withAlpha(40),
+                    minHeight: 6,
+                  ),
                   const Spacer(),
                   if (order.status == OrderStatus.delivered || order.status == OrderStatus.cancelled)
-                    FilledButton(
-                      onPressed: () => provider.clearActiveOrder(),
-                      child: const Text('Clear'),
+                    AnimatedTap(
+                      onTap: () => provider.clearActiveOrder(),
+                      child: FilledButton(
+                        onPressed: () => provider.clearActiveOrder(),
+                        child: const Text('Clear'),
+                      ),
                     ),
                 ],
               ),
